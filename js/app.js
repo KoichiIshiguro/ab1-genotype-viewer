@@ -13,8 +13,6 @@
   var $ = function (id) { return document.getElementById(id); };
 
   var COLW = 33;        // 1塩基あたりの幅(px) — CSS の --colw と一致させる
-  var HEADH = 43;       // ルーラー42px + 下線1px
-  var ROWH = 93;        // 行92px + 下線1px
   var TRACE_TOP = 38;   // 行内の波形描画開始位置
   var TRACE_H = 50;
 
@@ -312,9 +310,19 @@
     ctx.clearRect(0, 0, w, h);
 
     var scrollLeft = $('scroller').scrollLeft;
+
+    // 行の縦位置はCSSの値から計算せず、実際の .track 要素の位置を測って使う。
+    // （定数で持つと1pxの差が行ごとに積み上がり、下の行ほど波形がずれる）
+    var wrapTop = wrap.getBoundingClientRect().top;
+    var trackEls = $('tracks').children;
+
     results.forEach(function (r, i) {
       if (!r.displayable) return;
-      drawRow(ctx, r, HEADH + i * ROWH, scrollLeft, w);
+      var el = trackEls[i];
+      if (!el) return;
+      var top = el.getBoundingClientRect().top - wrapTop;
+      if (top > h || top + TRACE_TOP + TRACE_H < 0) return;   // 画面外は描かない
+      drawRow(ctx, r, top, scrollLeft, w);
     });
   }
 
