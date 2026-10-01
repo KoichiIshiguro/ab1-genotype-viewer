@@ -175,7 +175,7 @@ button,input,textarea{font:inherit}
 <header class="top">
   <div class="mark">A</div>
   <div>
-    <div class="title">AB1 Genotype Viewer<span class="ver">v0.5.0</span></div>
+    <div class="title">AB1 Genotype Viewer<span class="ver">v0.6.0</span></div>
     <div class="sub">Sanger sequence review</div>
   </div>
   <div class="spacer"></div>
@@ -299,14 +299,17 @@ button,input,textarea{font:inherit}
       <a href="https://github.com/KoichiIshiguro/ab1-genotype-viewer" rel="noopener">GitHub（ソースコード）</a>
     </nav>
     <div class="sitefoot-note">
-      解析はすべてブラウザ内で実行され、AB1データがサーバーへ送信されることはありません。
+      解析はすべてブラウザ内で実行され、AB1ファイルや塩基配列がサーバーへ送信されることはありません。
       外部ライブラリ・CDNも使用していないため、オフラインでも動作します。
+      この公開サイトでは、どの機能が何回使われたかという利用統計のみを当サイト自身が記録しています
+      （<a href="help.html#privacy">詳しくはこちら</a>）。
     </div>
   </div>
 </footer>
 
 <div class="hint" id="hint"></div>
 
+<script src="js/stat.js"></script>
 <script src="js/abif.js"></script>
 <script src="js/target.js"></script>
 <script src="js/align.js"></script>

@@ -12,6 +12,11 @@
   var AB1 = window.AB1;
   var $ = function (id) { return document.getElementById(id); };
 
+  // 利用統計。stat.js を外した配布でも動くように存在チェックしてから呼ぶ。
+  function stat(name, params) {
+    if (AB1.stat) AB1.stat.event(name, params);
+  }
+
   var COLW = 33;        // 1塩基あたりの幅(px) — CSS の --colw と一致させる
   var TRACE_TOP = 38;   // 行内の波形描画開始位置
   var TRACE_H = 50;
@@ -103,6 +108,11 @@
     });
 
     chain.then(function () {
+      stat('files', {
+        n: list.length,
+        ok: samples.filter(function (s) { return s.read; }).length,
+        ng: samples.filter(function (s) { return s.error; }).length
+      });
       analyze(warnings);
     });
   }
@@ -137,6 +147,17 @@
       var firstOk = results.findIndex(function (r) { return r.displayable; });
       selected = { sample: firstOk >= 0 ? firstOk : 0, coord: defaultCoord(results[firstOk >= 0 ? firstOk : 0]) };
     }
+
+    // サンプルが無い状態の自動実行（ページ初期化・設定変更）は数えない
+    if (results.length) stat('analyze', {
+      m: target ? 'target' : 'scan',           // ターゲット指定あり／全塩基スキャン
+      n: results.length,
+      ok: shown.length,
+      w: warnings.length,
+      cr: cfg.minCallRatio,                    // 実際に使われているしきい値の分布を見るため
+      mi: cfg.minIntensity,
+      id: cfg.minIdentity
+    });
 
     showWarnings(warnings);
     render();
@@ -565,6 +586,7 @@
     a.click();
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    stat('export', { n: results.length });
   }
 
   /* ---------------- イベント ---------------- */

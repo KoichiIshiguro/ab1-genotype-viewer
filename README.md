@@ -4,7 +4,9 @@
 
 一言でいうと、**サンガーシーケンスによるSNPタイピングを簡単にするツール**です。
 ブラウザで開くだけで動きます。インストール・サーバー・ネットワーク接続は不要で、
-AB1データは一切外部に送信されません。
+AB1ファイルや塩基配列が外部に送信されることはありません。
+（公開サイトでは、どの機能が何回使われたかという利用統計のみを当サイト自身が記録しています。
+詳細は[アクセス解析・利用統計](#アクセス解析利用統計)。）
 
 🌐 **公開URL: https://ab1-snp.app.saltybullet.com/**
 📖 **[使い方・解説](https://ab1-snp.app.saltybullet.com/help.html)** ── ユースケース、設定項目、判定のしくみ、制限事項
@@ -159,7 +161,7 @@ help.html         使い方・解説ページ
 favicon.svg       ファビコン
 apple-touch-icon.png / ogp.png   アイコン・OGP画像
 robots.txt / sitemap.xml         クローラー向け
-deploy/           Apache vhost 定義とデプロイ用スクリプト
+deploy/           Apache vhost 定義、デプロイ用スクリプト、アクセスログ集計
 js/abif.js        ABIF(.ab1/.abi)パーサ、逆相補変換
 js/target.js      角括弧記法のパース
 js/align.js       順方向／逆相補方向の照合と方向判定
@@ -167,6 +169,7 @@ js/call.js        対象位置の強度・比率・遺伝型判定
 js/xlsx.js        依存なしの最小 .xlsx ライター（ZIP store + SpreadsheetML）
 js/export.js      Excel 19列の行データ生成
 js/app.js         画面の組み立てと操作
+js/stat.js        利用統計の送出（公開サイト用。数値と区分のみ送る）
 test/             検証スクリプト
 ```
 
@@ -177,6 +180,7 @@ Node の `require()` としても読める形にしてあり、テストは Node
 
 ```
 node test/rules_test.js      # 判定ルール（15件）
+node test/stat_test.js       # 利用統計の送信条件と送信内容（9件）
 node test/validate.js        # 同階層の実AB1で解析 + 逆相補変換・Reverse経路・未指定モードの検証
 node test/export_test.js     # 実データから .xlsx を生成
 ```
@@ -216,6 +220,45 @@ JSON-LD構造化データ（`SoftwareApplication` / `TechArticle` / `BreadcrumbL
 `robots.txt` と `sitemap.xml`、OGP画像（`ogp.png`）、ファビコン（`favicon.svg`）も同梱しています。
 canonical・OGP・sitemap のURLは公開ドメインを直書きしているため、ドメインを変える場合は
 `index.html` / `help.html` / `robots.txt` / `sitemap.xml` / `deploy/` を合わせて書き換えてください。
+
+## アクセス解析・利用統計
+
+外部の解析サービス（Googleアナリティクス等）は使っていません。要件どおり外部へのリクエストを増やさないため、
+**自分のサーバーのApacheアクセスログだけ**で集計します。
+
+**流入（どこから何人来たか）** … Apacheのアクセスログがそのまま材料になります。追加のコードはありません。
+
+**使用状況（どの機能が何回使われたか）** … `js/stat.js` が、同一オリジンの `/_e/<イベント名>?…` を
+画像として読みに行きます。vhost 側は `RewriteRule ^/_e/ - [R=204,L]` で本文なしを返すだけなので、
+記録はアクセスログの1行だけです。Cookieもサーバー側の保存もありません。
+
+| イベント | 送る値 |
+|---|---|
+| `pv` | ページ種別（`top` / `help`） |
+| `files` | 読み込んだファイル数、成功数、失敗数 |
+| `analyze` | モード（`target` / `scan`）、サンプル数、判定できた数、警告数、設定した3つのしきい値 |
+| `export` | Excel出力した行数 |
+
+送らないもの: AB1ファイル、塩基配列、ターゲット配列、ファイル名、サンプル名、判定結果、波形。
+`js/stat.js` は数値・真偽値・短い英数字以外を落としてから送ります（`test/stat_test.js` で検証）。
+
+送らない条件: `file://` で開いたとき／ブラウザの DNT・Global Privacy Control が有効なとき／
+`localStorage` の `ab1stat` が `off` のとき（解説ページ「12. データの扱い」にスイッチがあります）。
+
+集計はサーバー上で実行します。
+
+```
+ssh salty 'python3 /var/www/ab1-snp.app.saltybullet.com/deploy/stats.py'            # 直近30日
+ssh salty 'python3 /var/www/ab1-snp.app.saltybullet.com/deploy/stats.py --days 7'
+ssh salty 'python3 /var/www/ab1-snp.app.saltybullet.com/deploy/stats.py --json'     # 機械可読
+```
+
+日別PV／UU、ページ別、流入元（検索エンジン別・検索キーワード）、ブラウザ・OS、
+検索ボットの巡回状況、エラー応答、そして上記の利用イベント集計を出します。
+Python標準ライブラリだけで動き、サーバーへの追加インストールは不要です。
+
+アクセスログは `root:adm 0640` のため、`deploy/setup-vhost.sh` が `saltybullet` を `adm` グループに追加します
+（これにより `sudo` なしで集計できます）。
 
 ## 動作確認環境
 
