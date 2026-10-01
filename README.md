@@ -2,10 +2,14 @@
 
 **サンガーシーケンスの `.ab1` ファイルから、狙った位置の遺伝型（ホモ／ヘテロ）を判定して Excel にまとめるローカル完結のWebツール。**
 
-ブラウザで `index.html` を開くだけで動きます。インストール・サーバー・ネットワーク接続は不要で、
+一言でいうと、**サンガーシーケンスによるSNPタイピングを簡単にするツール**です。
+ブラウザで開くだけで動きます。インストール・サーバー・ネットワーク接続は不要で、
 AB1データは一切外部に送信されません。
 
-📖 **[使い方・解説ページ（help.html）](help.html)** ── ユースケース、設定項目、判定のしくみ、制限事項
+🌐 **公開URL: https://ab1-snp.app.saltybullet.com/**
+📖 **[使い方・解説](https://ab1-snp.app.saltybullet.com/help.html)** ── ユースケース、設定項目、判定のしくみ、制限事項
+
+ローカルで使う場合は、このリポジトリをダウンロードして `index.html` をダブルクリックするだけです。
 
 ---
 
@@ -152,6 +156,10 @@ Quality score / 元の読取方向 / アライメント可否 / コメント`
 ```
 index.html        画面（バージョン表記はタイトル横の <span class="ver">。package.json と合わせて更新する）
 help.html         使い方・解説ページ
+favicon.svg       ファビコン
+apple-touch-icon.png / ogp.png   アイコン・OGP画像
+robots.txt / sitemap.xml         クローラー向け
+deploy/           Apache vhost 定義とデプロイ用スクリプト
 js/abif.js        ABIF(.ab1/.abi)パーサ、逆相補変換
 js/target.js      角括弧記法のパース
 js/align.js       順方向／逆相補方向の照合と方向判定
@@ -186,6 +194,28 @@ node test/export_test.js     # 実データから .xlsx を生成
 - 複数座位のターゲット一括登録（`js/target.js` の `parseAll()` は複数行＝複数ターゲットを返す構成にはしてある）
 - 同一検体の Forward / Reverse の自動対応付けと一致判定
 - クロマトグラムのPNG／PDF保存、解析条件や手動修正の履歴保存、PDFレポート
+
+## 公開・デプロイ
+
+公開URL: **https://ab1-snp.app.saltybullet.com/**
+
+静的ファイルのみで動くため、Apacheのドキュメントルートに置くだけで公開できます。
+
+```
+bash deploy/deploy.sh                                   # 手元 → サーバーへ同期（rsync）
+ssh salty 'sudo bash /var/www/<host>/deploy/setup-vhost.sh'   # 初回のみ：vhost設置 + Let's Encrypt
+```
+
+`deploy/` には vhost 定義（gzip圧縮・キャッシュ制御・CSPなどのセキュリティヘッダー込み）と
+セットアップスクリプトが入っています。2回目以降の更新は `deploy/deploy.sh` だけで反映されます。
+
+### SEO
+
+`index.html` / `help.html` に、title・meta description・canonical・OGP／Twitter Card・
+JSON-LD構造化データ（`SoftwareApplication` / `TechArticle` / `BreadcrumbList` / `FAQPage`）を設定しています。
+`robots.txt` と `sitemap.xml`、OGP画像（`ogp.png`）、ファビコン（`favicon.svg`）も同梱しています。
+canonical・OGP・sitemap のURLは公開ドメインを直書きしているため、ドメインを変える場合は
+`index.html` / `help.html` / `robots.txt` / `sitemap.xml` / `deploy/` を合わせて書き換えてください。
 
 ## 動作確認環境
 

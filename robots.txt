@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ab1-snp.app.saltybullet.com/sitemap.xml

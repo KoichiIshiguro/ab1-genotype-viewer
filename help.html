@@ -3,7 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>使い方・解説 — AB1 Genotype Viewer</title>
+<title>使い方・解説｜AB1 Genotype Viewer（.ab1 のSNPタイピング手順）</title>
+<meta name="description" content="AB1 Genotype Viewer の使い方。.ab1ファイルの読み込み方、角括弧記法でのSNP部位指定、最小蛍光強度・最小コール比率などの設定項目、ホモ／ヘテロ判定のしくみ、Quality scoreを判定に使わない理由、Excel出力の列、制限事項までを解説します。">
+<link rel="canonical" href="https://ab1-snp.app.saltybullet.com/help.html">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<meta name="theme-color" content="#5755d9">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AB1 Genotype Viewer">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="使い方・解説｜AB1 Genotype Viewer（.ab1 のSNPタイピング手順）">
+<meta property="og:description" content="AB1 Genotype Viewer の使い方。.ab1ファイルの読み込み方、角括弧記法でのSNP部位指定、最小蛍光強度・最小コール比率などの設定項目、ホモ／ヘテロ判定のしくみ、Quality scoreを判定に使わない理由、Excel出力の列、制限事項までを解説します。">
+<meta property="og:url" content="https://ab1-snp.app.saltybullet.com/help.html">
+<meta property="og:image" content="https://ab1-snp.app.saltybullet.com/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="使い方・解説｜AB1 Genotype Viewer（.ab1 のSNPタイピング手順）">
+<meta name="twitter:description" content="AB1 Genotype Viewer の使い方。.ab1ファイルの読み込み方、角括弧記法でのSNP部位指定、最小蛍光強度・最小コール比率などの設定項目、ホモ／ヘテロ判定のしくみ、Quality scoreを判定に使わない理由、Excel出力の列、制限事項までを解説します。">
+<meta name="twitter:image" content="https://ab1-snp.app.saltybullet.com/ogp.png">
 <style>
 :root{--ink:#172033;--muted:#687083;--line:#e4e7ee;--panel:#fff;--bg:#f5f7fb;--brand:#5755d9;--green:#15966b;--amber:#cc7a19;--red:#d64b58;--A:#33a36b;--T:#d84c55;--G:#343944;--C:#3578dc;--shadow:0 8px 28px rgba(35,43,76,.08)}
 *{box-sizing:border-box}
@@ -58,7 +78,7 @@ footer{max-width:1180px;margin:auto;padding:0 28px 50px;color:var(--muted);font-
 <header class="top">
   <div class="mark">A</div>
   <div>
-    <div class="title">AB1 Genotype Viewer<span class="ver">v0.4.1</span></div>
+    <div class="title">AB1 Genotype Viewer<span class="ver">v0.5.0</span></div>
     <div class="sub">使い方・解説</div>
   </div>
   <div class="spacer"></div>
@@ -81,6 +101,7 @@ footer{max-width:1180px;margin:auto;padding:0 28px 50px;color:var(--muted);font-
   <a href="#states">10. 判定できないときの表示</a>
   <a href="#limits">11. 制限事項</a>
   <a href="#privacy">12. データの扱い</a>
+  <a href="#faq">13. よくある質問</a>
 </nav>
 
 <article>
@@ -316,6 +337,31 @@ Q 10-14   n= 57   中央値 0.333</pre>
 
 <p>配布物は <code>index.html</code> と <code>js/</code> だけです。社内ネットワークやオフライン環境のPCにフォルダごと置いて使えます。</p>
 
+<h2 id="faq">13. よくある質問</h2>
+<h3>AB1ファイルはアップロードされますか？</h3>
+<p>いいえ。ファイルの読み込み、波形の解析、遺伝型の判定、Excelの生成まですべてブラウザの中（JavaScript）で実行されます。サーバーへの送信は一切ありません。外部ライブラリ・CDNも使っていないため、ネットワークを切断した状態でも動作します。</p>
+
+<h3>ホモとヘテロはどう判定していますか？</h3>
+<p>対象位置のピーク位置における A／T／G／C 4チャンネルの蛍光強度を合計1.0に正規化し、最小コール比率（既定0.20）以上の塩基を候補とします。候補が1つならホモ、2つならヘテロ、3つ以上なら要確認です。合計強度が最小蛍光強度（既定500）未満のときは N（判定不能）とします。</p>
+
+<h3>Reverseプライマーで読んだサンプルも使えますか？</h3>
+<p>使えます。ターゲット配列に対してそのままと逆相補の両方で照合し、よく一致したほうを採用します。Reverseの場合は配列・ピーク位置・4色チャンネルすべてを逆相補変換して、ターゲットと同じ向きに揃えて表示します。元の読取方向は Forward／Reverse として記録・出力されます。</p>
+
+<h3>ターゲット配列を入れずに解析するとどうなりますか？</h3>
+<p>照合も向き判定も行わず、各ファイルを読まれたままの向きで表示して、全塩基位置についてホモ／ヘテロを判定します。クローンに二重ピークが混ざっていないかを確認したいときに使います。</p>
+
+<h3>Quality score が低い位置は除外されないのですか？</h3>
+<p>除外しません。Phred quality score の算出指標のひとつが「コールされなかった塩基の最大ピーク高 ÷ コールされた塩基のピーク高」で、ヘテロ判定に使う第2ピークの比率とほぼ同じものです。ヘテロ位置では原理的に Quality が下がるため、Quality で足切りすると探している対象そのものを捨てることになります。値は表示のみに使います。</p>
+
+<h3>ベースコールの文字と判定結果が食い違うことがあるのはなぜですか？</h3>
+<p>配列欄に表示している文字は、AB1ファイルに記録されたベースコール結果（PBAS）をそのまま出しているためです。遺伝型の判定は、それとは別にピーク高さの比率から行っています。二重ピークの位置ではベースコーラーが低いほうの塩基を選ぶことがあり、その場合に食い違いが生じます。</p>
+
+<h3>挿入・欠失（indel）を含むサンプルは判定できますか？</h3>
+<p>できません。ターゲット配列との照合はギャップを許さないスライド照合のため、indelを含むリードは一致率が下がり、アライメント不可になることがあります。</p>
+
+<h3>対応しているファイル形式は何ですか？</h3>
+<p>Applied Biosystems のシーケンサが出力する ABIF 形式（.ab1 / .abi）です。受託シーケンスから返ってくるファイルをそのまま読み込めます。</p>
+
 </article>
 </div>
 
@@ -324,5 +370,77 @@ Q 10-14   n= 57   中央値 0.333</pre>
   <a href="index.html">ツールに戻る</a>
 </footer>
 
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "TechArticle",
+      "@id": "https://ab1-snp.app.saltybullet.com/help.html#article",
+      "headline": "AB1 Genotype Viewer 使い方・解説",
+      "description": "AB1 Genotype Viewer の使い方、設定項目、ホモ／ヘテロ判定のしくみ、Excel出力、制限事項の解説。",
+      "url": "https://ab1-snp.app.saltybullet.com/help.html",
+      "inLanguage": "ja",
+      "image": "https://ab1-snp.app.saltybullet.com/ogp.png",
+      "author": { "@type": "Organization", "name": "Saltybullet", "url": "https://saltybullet.com/" },
+      "about": { "@type": "Thing", "name": "サンガーシーケンスによるSNPジェノタイピング" },
+      "isPartOf": { "@type": "WebApplication", "name": "AB1 Genotype Viewer", "url": "https://ab1-snp.app.saltybullet.com/" }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "AB1 Genotype Viewer", "item": "https://ab1-snp.app.saltybullet.com/" },
+        { "@type": "ListItem", "position": 2, "name": "使い方・解説", "item": "https://ab1-snp.app.saltybullet.com/help.html" }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "AB1ファイルはアップロードされますか？",
+      "acceptedAnswer": { "@type": "Answer", "text": "いいえ。ファイルの読み込み、波形の解析、遺伝型の判定、Excelの生成まですべてブラウザの中（JavaScript）で実行されます。サーバーへの送信は一切ありません。外部ライブラリ・CDNも使っていないため、ネットワークを切断した状態でも動作します。" }
+    },
+    {
+      "@type": "Question",
+      "name": "ホモとヘテロはどう判定していますか？",
+      "acceptedAnswer": { "@type": "Answer", "text": "対象位置のピーク位置における A／T／G／C 4チャンネルの蛍光強度を合計1.0に正規化し、最小コール比率（既定0.20）以上の塩基を候補とします。候補が1つならホモ、2つならヘテロ、3つ以上なら要確認です。合計強度が最小蛍光強度（既定500）未満のときは N（判定不能）とします。" }
+    },
+    {
+      "@type": "Question",
+      "name": "Reverseプライマーで読んだサンプルも使えますか？",
+      "acceptedAnswer": { "@type": "Answer", "text": "使えます。ターゲット配列に対してそのままと逆相補の両方で照合し、よく一致したほうを採用します。Reverseの場合は配列・ピーク位置・4色チャンネルすべてを逆相補変換して、ターゲットと同じ向きに揃えて表示します。元の読取方向は Forward／Reverse として記録・出力されます。" }
+    },
+    {
+      "@type": "Question",
+      "name": "ターゲット配列を入れずに解析するとどうなりますか？",
+      "acceptedAnswer": { "@type": "Answer", "text": "照合も向き判定も行わず、各ファイルを読まれたままの向きで表示して、全塩基位置についてホモ／ヘテロを判定します。クローンに二重ピークが混ざっていないかを確認したいときに使います。" }
+    },
+    {
+      "@type": "Question",
+      "name": "Quality score が低い位置は除外されないのですか？",
+      "acceptedAnswer": { "@type": "Answer", "text": "除外しません。Phred quality score の算出指標のひとつが「コールされなかった塩基の最大ピーク高 ÷ コールされた塩基のピーク高」で、ヘテロ判定に使う第2ピークの比率とほぼ同じものです。ヘテロ位置では原理的に Quality が下がるため、Quality で足切りすると探している対象そのものを捨てることになります。値は表示のみに使います。" }
+    },
+    {
+      "@type": "Question",
+      "name": "ベースコールの文字と判定結果が食い違うことがあるのはなぜですか？",
+      "acceptedAnswer": { "@type": "Answer", "text": "配列欄に表示している文字は、AB1ファイルに記録されたベースコール結果（PBAS）をそのまま出しているためです。遺伝型の判定は、それとは別にピーク高さの比率から行っています。二重ピークの位置ではベースコーラーが低いほうの塩基を選ぶことがあり、その場合に食い違いが生じます。" }
+    },
+    {
+      "@type": "Question",
+      "name": "挿入・欠失（indel）を含むサンプルは判定できますか？",
+      "acceptedAnswer": { "@type": "Answer", "text": "できません。ターゲット配列との照合はギャップを許さないスライド照合のため、indelを含むリードは一致率が下がり、アライメント不可になることがあります。" }
+    },
+    {
+      "@type": "Question",
+      "name": "対応しているファイル形式は何ですか？",
+      "acceptedAnswer": { "@type": "Answer", "text": "Applied Biosystems のシーケンサが出力する ABIF 形式（.ab1 / .abi）です。受託シーケンスから返ってくるファイルをそのまま読み込めます。" }
+    }
+      ]
+    }
+  ]
+}
+</script>
 </body>
 </html>
