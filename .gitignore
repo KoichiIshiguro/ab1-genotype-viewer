@@ -1,0 +1,11 @@
+# 実験データ（検体データのため公開しない）
+*.ab1
+*.abi
+*.xlsx
+.upload-files/
+
+# 要件定義（社内資料）
+ANDROSOPHY_*.md
+
+.DS_Store
+node_modules/

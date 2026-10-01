@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>使い方・解説 — AB1 Genotype Viewer</title>
+<style>
+:root{--ink:#172033;--muted:#687083;--line:#e4e7ee;--panel:#fff;--bg:#f5f7fb;--brand:#5755d9;--green:#15966b;--amber:#cc7a19;--red:#d64b58;--A:#33a36b;--T:#d84c55;--G:#343944;--C:#3578dc;--shadow:0 8px 28px rgba(35,43,76,.08)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.top{height:64px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;gap:14px;position:sticky;top:0;z-index:30}
+.mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(140deg,var(--brand),#9b72e7);display:grid;place-items:center;color:#fff;font-weight:800}
+.title{font-size:17px;font-weight:750}
+.title .ver{font-size:12px;font-weight:600;color:#8b93a4;margin-left:8px;letter-spacing:.02em}
+.sub{font-size:12px;color:var(--muted)}
+.spacer{flex:1}
+.navlink{padding:7px 13px;border:1px solid var(--line);border-radius:9px;color:var(--brand);text-decoration:none;font-size:13px;font-weight:650;background:#fff}
+.navlink:hover{background:#f2f2ff;border-color:#c9c8f0}
+
+.wrap{max-width:1180px;margin:auto;padding:26px 28px 70px;display:grid;grid-template-columns:232px 1fr;gap:34px;align-items:start}
+nav.toc{position:sticky;top:88px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);font-size:13px}
+nav.toc b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+nav.toc a{display:block;color:var(--ink);text-decoration:none;padding:4px 0;line-height:1.4}
+nav.toc a:hover{color:var(--brand)}
+
+article{background:#fff;border:1px solid var(--line);border-radius:16px;padding:34px 40px 46px;box-shadow:var(--shadow);min-width:0}
+article h1{font-size:25px;margin:0 0 6px;letter-spacing:.01em}
+article .lead{color:var(--muted);font-size:14px;margin:0 0 30px}
+article h2{font-size:19px;margin:42px 0 12px;padding-top:16px;border-top:1px solid var(--line)}
+article h2:first-of-type{border-top:0;padding-top:0;margin-top:30px}
+article h3{font-size:15px;margin:26px 0 8px}
+article p{margin:10px 0}
+article ul,article ol{margin:10px 0;padding-left:1.45em}
+article li{margin:5px 0}
+article code{background:#f1f3f9;border-radius:5px;padding:1px 6px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+article pre{background:#1d2230;color:#e7eaf2;border-radius:11px;padding:15px 18px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.6}
+article pre b{color:#ffd479;font-weight:600}
+article table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.5px}
+article th,article td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+article th{background:#f7f8fc;font-weight:700;white-space:nowrap}
+article td code{white-space:nowrap}
+.note{border-left:3px solid var(--brand);background:#f6f6ff;border-radius:0 10px 10px 0;padding:12px 16px;margin:16px 0;font-size:14px}
+.note.warn{border-left-color:var(--amber);background:#fff8ec}
+.note.good{border-left-color:var(--green);background:#f0faf5}
+.note b{display:block;margin-bottom:3px}
+.seqbox{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;word-break:break-all;background:#f1f3f9;border-radius:9px;padding:12px 14px;line-height:1.7}
+.seqbox .v{background:var(--brand);color:#fff;border-radius:4px;padding:1px 4px;font-weight:700}
+.A{color:var(--A);font-weight:700}.T{color:var(--T);font-weight:700}.G{color:var(--G);font-weight:700}.C{color:var(--C);font-weight:700}
+.steps{counter-reset:s;list-style:none;padding:0}
+.steps li{counter-increment:s;position:relative;padding-left:40px;margin:14px 0}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:26px;height:26px;border-radius:8px;background:#e8e7ff;color:var(--brand);font-weight:800;font-size:13px;display:grid;place-items:center}
+footer{max-width:1180px;margin:auto;padding:0 28px 50px;color:var(--muted);font-size:12.5px}
+@media(max-width:900px){.wrap{grid-template-columns:1fr;padding:18px 14px 50px}nav.toc{position:static}article{padding:22px 20px 34px}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="mark">A</div>
+  <div>
+    <div class="title">AB1 Genotype Viewer<span class="ver">v0.4.0</span></div>
+    <div class="sub">使い方・解説</div>
+  </div>
+  <div class="spacer"></div>
+  <a class="navlink" href="index.html">← ツールに戻る</a>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <b>目次</b>
+  <a href="#what">1. このツールは何をするか</a>
+  <a href="#usecase">2. こんなときに使う</a>
+  <a href="#quick">3. クイックスタート</a>
+  <a href="#input">4. 入力</a>
+  <a href="#params">5. 設定項目</a>
+  <a href="#screen">6. 画面の見方</a>
+  <a href="#logic">7. 判定のしくみ</a>
+  <a href="#quality">8. Quality score を使わない理由</a>
+  <a href="#excel">9. Excel出力</a>
+  <a href="#states">10. 判定できないときの表示</a>
+  <a href="#limits">11. 制限事項</a>
+  <a href="#privacy">12. データの扱い</a>
+</nav>
+
+<article>
+
+<h1>AB1 Genotype Viewer 使い方・解説</h1>
+<p class="lead">サンガーシーケンスの .ab1 ファイルから、狙った位置の遺伝型（ホモ／ヘテロ）を判定して Excel にまとめるツールです。ブラウザだけで動き、データはどこにも送信されません。</p>
+
+<h2 id="what">1. このツールは何をするか</h2>
+
+<p>サンガーシーケンス（キャピラリーシーケンス）で得られる <code>.ab1</code> ファイルには、A／T／G／C 4色の蛍光波形（クロマトグラム）が入っています。SNPタイピングでは、この波形の<strong>ある1か所</strong>を見て、</p>
+
+<ul>
+  <li>ピークが1本だけ立っている → その塩基の<strong>ホモ接合（例 G/G）</strong></li>
+  <li>ピークが2本重なっている → <strong>ヘテロ接合（例 A/G）</strong></li>
+</ul>
+
+<p>を読み取ります。従来これは、1ファイルずつビューアで開き、目で波形を追い、目的の位置を探して、判定を手でExcelに転記する作業でした。サンプルが数十件あると時間がかかり、しかも</p>
+
+<ul>
+  <li>Reverseプライマーで読んだサンプルは配列が逆向き・相補鎖になっているので、頭の中で変換しないと比較できない</li>
+  <li>リードごとに読み始めの位置がずれるので、「目的の位置」がファイルごとに違う座標にある</li>
+  <li>ヘテロは第2ピークが小さいと見落としやすく、判定が人によってぶれる</li>
+</ul>
+
+<p>という間違いやすい要素が揃っています。このツールは、<strong>複数のAB1をまとめて読み込み、向きを自動で揃え、目的の位置を数値（蛍光強度の比率）で判定して、一覧とExcelにする</strong>ところまでを自動化します。</p>
+
+<div class="note good">
+  <b>やっていることを一言でいうと</b>
+  「波形の目視判定」を「ピーク高さの比率による数値判定」に置き換え、全サンプルを同じ基準・同じ座標軸で並べて見られるようにするツールです。
+</div>
+
+<h2 id="usecase">2. こんなときに使う</h2>
+
+<h3>ケース1 ── SNPジェノタイピングの結果判定</h3>
+<p>多型のある1か所について、被験者・検体ごとの遺伝型を決めたい。プライマーで増幅してシーケンスに出し、返ってきた .ab1 を全部ドロップして、目的位置の遺伝型（A/A・A/G・G/G）を一覧で得る、という使い方です。もっとも想定している使い方です。</p>
+
+<h3>ケース2 ── 変異導入・クローニングの確認</h3>
+<p>変異を入れたプラスミドやゲノム編集クローンで、狙った塩基が入っているか、ホモかヘテロか（片アレルだけ変異したのか）を確認する。角括弧に「野生型/変異型」を書いておけば、両方入っているクローンがヘテロとして出ます。</p>
+
+<h3>ケース3 ── シーケンス全体に二重ピークがないかの確認</h3>
+<p>ターゲット配列を<strong>空欄のまま</strong>解析すると、各ファイルの全塩基について二重ピークの有無を調べます。「このクローンは単一か、それとも複数の配列が混ざっているか」「どこかに予期しないヘテロ位置がないか」を見るときに使います。</p>
+
+<h3>ケース4 ── 大量サンプルの一次スクリーニング</h3>
+<p>何十検体もあるとき、まず全部通して、判定が付いたものと「要確認」になったものに仕分けし、要確認のものだけ波形を目で見る、という流れに使えます。シーケンス自体が失敗しているファイル（ベースコールが <code>NNNN…</code> のもの）も自動で分離されます。</p>
+
+<h2 id="quick">3. クイックスタート</h2>
+
+<p><code>index.html</code> をダブルクリックしてブラウザで開くだけです。インストールもサーバーも不要です（Safari／Chrome で動作確認済み）。</p>
+
+<ol class="steps">
+  <li><strong>AB1ファイルをドロップ</strong><br>画面上部の点線枠に <code>.ab1</code> / <code>.abi</code> をまとめてドラッグ＆ドロップします（枠をクリックしてファイル選択でも可）。</li>
+  <li><strong>ターゲット配列を入れる（任意）</strong><br>判定したい位置を角括弧で囲んだ配列を貼り付けます。<strong>空欄のままでも構いません。</strong>その場合は全塩基のホモ／ヘテロ判定モードになります。</li>
+  <li><strong>「ターゲットを解析」を押す</strong><br>各サンプルの向き判定・位置合わせ・遺伝型判定がまとめて走ります。</li>
+  <li><strong>結果を確認する</strong><br>左に判定、右に波形が並びます。塩基にポイントすると比率や蛍光強度が出ます。クリックすると下の詳細欄に反映されます。</li>
+  <li><strong>「Excelで一括出力」</strong><br>全サンプルの判定を <code>.xlsx</code> にまとめてダウンロードします。</li>
+</ol>
+
+<h2 id="input">4. 入力</h2>
+
+<h3>4.1 AB1 / ABI ファイル</h3>
+<p>Applied Biosystems のシーケンサが出力する ABIF 形式のファイルです。受託シーケンス（Eurofins、ファスマック、マクロジェン等）から返ってくる <code>.ab1</code> がそのまま使えます。ファイル内の以下のデータを読んでいます。</p>
+
+<table>
+  <tr><th>タグ</th><th>内容</th></tr>
+  <tr><td><code>PBAS1/2</code></td><td>ベースコール結果（塩基配列）</td></tr>
+  <tr><td><code>PLOC1/2</code></td><td>各塩基に対応する波形上のピーク位置</td></tr>
+  <tr><td><code>PCON1/2</code></td><td>各塩基の Quality score（表示のみに使用）</td></tr>
+  <tr><td><code>DATA9-12</code></td><td>解析済みの4色蛍光波形</td></tr>
+  <tr><td><code>FWO_</code></td><td>波形のチャンネルと塩基の対応順（ファイルごとに読む）</td></tr>
+  <tr><td><code>SMPL</code> / <code>MCHN</code> / <code>S/N%</code></td><td>サンプル名・装置名・S/N比</td></tr>
+</table>
+
+<h3>4.2 ターゲット配列（角括弧記法）</h3>
+
+<p>判定したい1か所を <code>[A/G]</code> のように角括弧で囲み、その前後の配列と一緒に貼り付けます。前後の配列は、どのサンプルがどこを読んでいるかを突き合わせるための目印として使います。</p>
+
+<div class="seqbox">ATCGCCATG<span class="v">[A/G]</span>ATTCCTGAC…</div>
+
+<ul>
+  <li>角括弧は<strong>1か所だけ</strong>。</li>
+  <li>候補の塩基は<strong>2種類まで</strong>（<code>[A/G]</code>）。</li>
+  <li>角括弧の<strong>前後それぞれ8塩基以上</strong>必要です（短すぎると照合できないため）。実際には前後30〜80塩基ずつあると安定します。</li>
+  <li>前後の配列は A／C／G／T のみ。改行・スペースは無視されます。</li>
+  <li><strong>Forward鎖・Reverse鎖のどちらで書いても構いません。</strong>サンプルの向きは自動で判定されます。</li>
+</ul>
+
+<div class="note">
+  <b>空欄にした場合</b>
+  照合も向き判定も行わず、各ファイルを読まれたままの向きで表示して、<strong>全塩基位置についてホモ／ヘテロを判定</strong>します（<a href="#usecase">ケース3</a>）。
+</div>
+
+<h2 id="params">5. 設定項目</h2>
+
+<table>
+  <tr><th>項目</th><th>既定値</th><th>意味・調整のしかた</th></tr>
+  <tr>
+    <td>ターゲット名</td><td><code>Target-1</code></td>
+    <td>Excelの「ターゲット名」列に出る見出しです。判定には影響しません。遺伝子名や座位名を入れておくと、複数回の出力をまとめるときに区別できます。</td>
+  </tr>
+  <tr>
+    <td>最小蛍光強度</td><td><code>500</code></td>
+    <td>その位置の4チャンネル合計の蛍光強度がこの値未満なら、信号が弱すぎるとみなして <code>N</code>（判定不能）にします。<br><strong>上げる</strong>と判定が厳しくなり、読み終わり付近の弱いシグナルを切り捨てます。<strong>下げる</strong>と弱いリードでも判定を出しますが、ノイズを拾いやすくなります。</td>
+  </tr>
+  <tr>
+    <td>最小コール比率</td><td><code>0.20</code></td>
+    <td><strong>ホモとヘテロを分ける閾値です。</strong>4チャンネルを合計1.0に正規化し、この比率<strong>以上</strong>の塩基を「存在する」とみなします。該当が1つならホモ、2つならヘテロ、3つ以上なら要確認。<br><strong>上げる</strong>（0.25〜0.30）とヘテロ判定が厳しくなり、色のにじみによる偽ヘテロが減りますが、第2ピークの低い本物のヘテロを取りこぼします。<strong>下げる</strong>と逆になります。</td>
+  </tr>
+  <tr>
+    <td>アライメント一致率下限</td><td><code>0.80</code></td>
+    <td>サンプルとターゲット配列を照合したときの一致率がこの値未満なら「アライメント不可」とし、判定を出しません。別座位のサンプルが混ざっていた場合に、ここで弾かれます。<br>プライマーの読み始めが汚いなど一致率が伸びないときは <code>0.70</code> 程度まで下げます。</td>
+  </tr>
+</table>
+
+<p>設定を変えると自動で再解析されます。ファイルを読み込み直す必要はありません。</p>
+
+<h2 id="screen">6. 画面の見方</h2>
+
+<p>左の3列（サンプル名・判定・読取方向）は固定で、右の配列部分だけが横スクロールします。</p>
+
+<ul>
+  <li><strong>サンプル名</strong> ── AB1ファイル内の <code>SMPL</code>（受託会社の管理番号になっていることが多い）とファイル名を併記します。</li>
+  <li><strong>判定</strong> ── 遺伝型（<span class="G">G</span>/<span class="G">G</span> など）とホモ／ヘテロ。ターゲット未指定モードではヘテロの検出箇所数を表示します。</li>
+  <li><strong>読取方向</strong> ── そのサンプルが Forward と Reverse のどちらで読まれていたか。Reverse の場合、<strong>配列・ピーク位置・4色チャンネルのすべてを逆相補変換して</strong>、ターゲットと同じ向きに揃えて表示しています。元の方向は記録・出力されます。</li>
+  <li><strong>配列と波形</strong> ── 全サンプルを「ターゲット配列上の座標」という共通の軸に載せているため、<strong>縦に見れば同じ位置が揃います。</strong>目的の位置には色が付きます。</li>
+  <li><strong>ツールチップ</strong> ── 塩基にポイントすると、その位置の A／T／G／C 比率、各チャンネルの蛍光強度、Quality score が出ます。クリックすると下の詳細欄に固定されます。</li>
+</ul>
+
+<h2 id="logic">7. 判定のしくみ</h2>
+
+<h3>7.1 向きの判定とアライメント</h3>
+<p>各サンプルの配列を、ターゲット配列に対して<strong>そのまま</strong>と<strong>逆相補</strong>の両方で1塩基ずつずらしながら照合し、もっともよく一致した位置と向きを採用します。一致（+1）／不一致（−1）／<code>N</code>（±0）で採点するため、ベースコールが <code>N</code> の位置はスコアに影響しません。挿入・欠失は考慮しないギャップなし照合です。</p>
+
+<h3>7.2 対象位置の測定</h3>
+<p>角括弧の位置に対応するサンプル上の塩基を特定し、その塩基の<strong>ピーク位置における4チャンネルの蛍光強度</strong>を読みます。負の値は0に丸めます。</p>
+
+<pre>対象位置の蛍光強度   A: 19   T: 58   G: 776   C: 0
+合計                 853
+比率                 A:0.022  T:0.068  <b>G:0.910</b>  C:0.000</pre>
+
+<h3>7.3 遺伝型の決定</h3>
+<ol>
+  <li>合計強度が<strong>最小蛍光強度</strong>未満 → <code>N</code>（判定不能）</li>
+  <li>4つの比率のうち、<strong>最小コール比率以上</strong>のものを候補とする（0.20ちょうどは候補に含める）</li>
+  <li>候補が1つ → <strong>ホモ</strong>（例 <code>G/G</code>）</li>
+  <li>候補が2つ → <strong>ヘテロ</strong>（例 <code>A/G</code>、表記順は A→T→G→C に固定）</li>
+  <li>候補が3つ以上 → <strong>要確認</strong>（混合ピーク・コンタミの可能性）</li>
+  <li>候補が0 → 要確認（信号はあるが、どれも閾値に届かない）</li>
+</ol>
+
+<p>角括弧に書いていない塩基が検出された場合も、判定は出したうえで「要確認」フラグを付けます。</p>
+
+<div class="note good">
+  <b>ベースコーラーより細かく拾えることがあります</b>
+  シーケンサのベースコール結果が <code>N</code> になっている位置でも、波形の比率を直接見るため、ピークがはっきりしていれば遺伝型を出せます。
+</div>
+
+<h3>7.4 ターゲット未指定モードの判定</h3>
+<p>照合も向き判定も行いません。読めている全塩基位置に 7.3 と同じ基準を当て、候補が2つになった位置（＝ヘテロ）を拾い出して、配列上で強調表示・一覧表示します。最小蛍光強度を満たさない位置は判定対象から外します。</p>
+
+<h2 id="quality">8. Quality score を使わない理由</h2>
+
+<p>AB1ファイルには、ベースコーラーが算出した塩基ごとの Phred quality score（<code>Q = -10 log₁₀(誤りの確率)</code>）が入っています。<strong>このツールは、Quality score を判定の足切りには使いません。</strong>値はツールチップ・詳細欄・Excelに表示するだけです。</p>
+
+<p>理由は、Quality score の計算に使われる指標のひとつが「<strong>コールされなかった塩基の最大ピーク高 ÷ コールされた塩基のピーク高</strong>」だからです。これは、このツールがヘテロ判定に使っている第2ピークの比率とほぼ同じものです。つまり、</p>
+
+<div class="note warn">
+  <b>ヘテロ位置では Quality score が必ず下がる</b>
+  ベースコーラーは「2つのピークが立っていて、どちらか決められない」位置に低いQを付けます。したがって Quality で足切りすると、<strong>探している対象そのものを先に捨ててしまいます。</strong>
+</div>
+
+<p>実データ（ACE1 コントロール、533塩基）で Q と第2ピーク比率の関係を集計すると、はっきり逆相関します。</p>
+
+<pre>Q 40以上   n= 35   第2ピーク比率 中央値 0.025
+Q 30-39   n=131   中央値 0.146
+Q 20-29   n=209   中央値 0.202
+Q 15-19   n= 72   中央値 0.258
+Q 10-14   n= 57   中央値 0.333</pre>
+
+<p>実際、Q下限20で運用していたとき、ある検体の真のヘテロ位置（A 55.9% / G 39.9%）は Q=12 だったために判定から除外されていました。この経緯から、Quality による足切りは廃止しています。シグナルの弱い位置を外す役割は<strong>最小蛍光強度</strong>が担います。</p>
+
+<h2 id="excel">9. Excel出力</h2>
+
+<p>「Excelで一括出力」で、読み込んだ全サンプルの判定を1つの <code>.xlsx</code> にまとめます。外部ライブラリを使わずファイルを生成しているため、オフラインでも動きます。</p>
+
+<table>
+  <tr><th>列</th><th>内容</th></tr>
+  <tr><td>サンプル名 / 元ファイル名</td><td>AB1内のサンプル名と、読み込んだファイル名</td></tr>
+  <tr><td>ターゲット名</td><td>設定した名前。未指定モードでは「（ターゲット未指定）」</td></tr>
+  <tr><td>判定 / 遺伝型</td><td>ホモ・ヘテロ・要確認などと、<code>G/G</code> のような遺伝型</td></tr>
+  <tr><td>実測対象塩基</td><td>その位置のベースコール結果（<code>N</code> のこともある）</td></tr>
+  <tr><td>位置</td><td>対象位置。未指定モードではヘテロ位置のサンプル内塩基番号</td></tr>
+  <tr><td>A/T/G/C比率</td><td>4チャンネルの比率（0〜1の小数、小数第4位）</td></tr>
+  <tr><td>A/T/G/C蛍光強度</td><td>各チャンネルの生の蛍光強度</td></tr>
+  <tr><td>Quality score</td><td>その位置のPhred quality（判定には使っていない参考値）</td></tr>
+  <tr><td>元の読取方向</td><td>Forward / Reverse</td></tr>
+  <tr><td>アライメント可否</td><td>可／不可（理由付き）</td></tr>
+  <tr><td>コメント</td><td>判定の根拠、要確認の理由、エラー内容</td></tr>
+</table>
+
+<p>ターゲット指定モードでは<strong>1サンプル1行</strong>、未指定モードでは<strong>ヘテロ位置1つにつき1行</strong>（0箇所のサンプルは要約1行）で出力します。</p>
+
+<h2 id="states">10. 判定できないときの表示</h2>
+
+<p>判定が出せない場合も、理由を区別して表示・出力します。黙って空欄にはしません。</p>
+
+<table>
+  <tr><th>状態</th><th>意味・対処</th></tr>
+  <tr><td>読込失敗</td><td>ABIF形式として読めないファイル。拡張子だけ <code>.ab1</code> の別物でないか確認してください。</td></tr>
+  <tr><td>ベースコールされた塩基がありません</td><td>配列が <code>NNNN…</code> のみ。シーケンス自体の失敗です（テンプレート不足、プライマー不良など）。再シーケンスが必要です。</td></tr>
+  <tr><td>ターゲットシーケンスとアライメントできませんでした</td><td>一致率が下限未満。別座位のサンプル、ターゲット配列の打ち間違い、または読めている領域が目的位置に届いていない場合に出ます。</td></tr>
+  <tr><td>対象位置を判読できません</td><td>照合はできたが、目的の位置がリードの範囲外。読み始め／読み終わりが足りていません。</td></tr>
+  <tr><td><code>N</code>／判定不能</td><td>蛍光強度が最小蛍光強度未満。</td></tr>
+  <tr><td>要確認（3塩基以上）</td><td>閾値以上の塩基が3種類以上。コンタミ、複数テンプレートの混在、ノイズを疑います。</td></tr>
+  <tr><td>重複読込</td><td>同じファイル名を再度ドロップした場合は追加せず警告します。AB1内のサンプル名が重複している場合は、別ファイルとして読み込んだうえで警告します。</td></tr>
+</table>
+
+<h2 id="limits">11. 制限事項</h2>
+
+<ul>
+  <li><strong>挿入・欠失（indel）には対応していません。</strong>照合はギャップなしのため、indelを含むリードは一致率が下がり、アライメント不可になることがあります。</li>
+  <li><strong>比率だけで判定しているため、色素のにじみ（bleed-through）やベースラインの持ち上がりもヘテロとして拾います。</strong>とくにターゲット未指定モードでは、読み始め50塩基付近に検出が集中します。品質の良いリードでは全長で数箇所、品質の落ちるリードでは数十箇所になることがあります。検出された位置は必ず波形を確認してください。</li>
+  <li>ヘテロ位置が1リードに複数ある場合でも、ターゲット指定モードでは角括弧の1か所しか判定しません。</li>
+  <li>同一検体の Forward と Reverse を自動で対応付けて突き合わせる機能はありません（両方読み込めば、同じ向きに揃えて並べて表示はされます）。</li>
+  <li>クロマトグラムの画像保存、解析条件や手動修正の履歴保存には対応していません。</li>
+</ul>
+
+<h2 id="privacy">12. データの扱い</h2>
+
+<div class="note good">
+  <b>AB1データは外部に送信されません</b>
+  ファイルの読み込み、波形の解析、判定、Excelの生成まで、すべてブラウザの中（JavaScript）で完結します。サーバーへのアップロードは一切行いません。外部ライブラリ・CDNも使用していないため、<strong>ネットワークを切断した状態でも動作します。</strong>
+</div>
+
+<p>配布物は <code>index.html</code> と <code>js/</code> だけです。社内ネットワークやオフライン環境のPCにフォルダごと置いて使えます。</p>
+
+</article>
+</div>
+
+<footer>
+  AB1 Genotype Viewer — ローカル完結のサンガーシーケンス遺伝型判定ツール　/
+  <a href="index.html">ツールに戻る</a>
+</footer>
+
+</body>
+</html>

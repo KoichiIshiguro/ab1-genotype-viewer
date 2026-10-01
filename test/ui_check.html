@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><title>UI check</title>
+<style>body{margin:0;font:12px -apple-system,sans-serif}
+#out{padding:8px 12px;background:#111;color:#0f0;white-space:pre;font:11px ui-monospace,Menlo,monospace}
+iframe{width:1660px;height:2250px;border:0;display:block}</style></head>
+<body>
+<div id="out">measuring…</div>
+<!-- PRELOAD にリポジトリ直下へ置いた .ab1 のファイル名をカンマ区切りで並べる -->
+<iframe id="f" src="../index.html?preload=sample1.ab1,sample2.ab1"></iframe>
+<script>
+var f = document.getElementById('f'), out = document.getElementById('out');
+function log(s){ out.textContent += '\n' + s; }
+f.addEventListener('load', function () {
+  setTimeout(function () {
+    var d = f.contentDocument, w = f.contentWindow;
+    var results = w.ab1app.getResults();
+    out.textContent = 'samples=' + results.length;
+
+    // 左固定列と右トラックの縦位置が一致しているか
+    var rows = d.querySelectorAll('#fixedCol .srow');
+    var tracks = d.querySelectorAll('#tracks .track');
+    var worst = 0, detail = [];
+    for (var i = 0; i < rows.length; i++) {
+      var a = rows[i].getBoundingClientRect(), b = tracks[i].getBoundingClientRect();
+      var diff = Math.round(Math.abs(a.top - b.top));
+      worst = Math.max(worst, diff);
+      detail.push(i + ':' + diff);
+    }
+    log('行の縦ズレ(px) 最大=' + worst + '  [' + detail.join(' ') + ']');
+    log('ヘッダ高: 固定側=' + Math.round(d.querySelector('#fixedCol .hrow').getBoundingClientRect().height) +
+        ' ルーラー=' + Math.round(d.querySelector('#ruler').getBoundingClientRect().height));
+
+    // 対象位置の列が全サンプルで同じ x に揃っているか
+    var xs = [];
+    d.querySelectorAll('#tracks .target-base, #tracks .het-base').forEach(function (el) {
+      xs.push(Math.round(el.getBoundingClientRect().left));
+    });
+    log('強調表示カラム数: ' + xs.length +
+        (new Set(xs).size === 1 ? ' → 全サンプル同じx（ターゲット指定モード）' : ' → ヘテロ位置（ターゲット未指定モード）'));
+
+    // 対象位置が画面中央に来るようスクロールし、再描画させる
+    var scroller = d.getElementById('scroller');
+    var tb = d.querySelector('#tracks .target-base') || d.querySelector('#tracks .het-base');
+    if (tb) {
+      scroller.scrollLeft = tb.offsetLeft - scroller.clientWidth / 2;
+      scroller.dispatchEvent(new w.Event('scroll'));
+    }
+    log('scrollLeft=' + Math.round(scroller.scrollLeft) + ' / scrollWidth=' + scroller.scrollWidth);
+    if (tb) tb.click();   // 対象位置をクリックして詳細欄を埋める
+
+    setTimeout(function () {
+      // canvas に実際に描画されたか（非透明ピクセルの有無）
+      var c = d.getElementById('traceLayer');
+      var ctx = c.getContext('2d');
+      var img = ctx.getImageData(0, 0, c.width, c.height).data;
+      var painted = 0;
+      for (var p = 3; p < img.length; p += 4 * 97) if (img[p] > 0) painted++;
+      log('波形canvas: ' + c.width + 'x' + c.height + ' 描画ピクセル(間引きサンプル)=' + painted);
+      log('READY');
+    }, 400);
+  }, 2500);
+});
+</script>
+</body></html>
