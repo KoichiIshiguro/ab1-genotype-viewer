@@ -212,7 +212,14 @@ ssh salty 'sudo bash /var/www/<host>/deploy/setup-vhost.sh'   # 初回のみ：v
 ```
 
 `deploy/` には vhost 定義（gzip圧縮・キャッシュ制御・CSPなどのセキュリティヘッダー込み）と
-セットアップスクリプトが入っています。2回目以降の更新は `deploy/deploy.sh` だけで反映されます。
+セットアップスクリプトが入っています。2回目以降のファイル更新は `deploy/deploy.sh` だけで反映されます。
+
+**vhost 定義（`deploy/<host>.conf`）を変えたとき**は、同期後にサーバーで次を実行します。
+certbot が作った HTTPS 用の `-le-ssl.conf` も同じ内容から作り直して反映します（旧設定は `.bak-日時` で残る）。
+
+```
+ssh salty 'sudo bash /var/www/<host>/deploy/update-vhost.sh'
+```
 
 ### SEO
 

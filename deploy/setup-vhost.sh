@@ -11,6 +11,12 @@ SRC="${ROOT}/deploy/${HOST}.conf"
 [ "$(id -u)" -eq 0 ] || { echo "root で実行してください（sudo bash $0）"; exit 1; }
 [ -f "$SRC" ] || { echo "vhost定義が見つかりません: $SRC"; exit 1; }
 
+# 2回目以降（証明書が既にある）は設定の反映だけを行う
+if [ -f "/etc/letsencrypt/live/${HOST}/fullchain.pem" ]; then
+    echo "証明書は取得済みです。設定の反映だけ行います（update-vhost.sh）"
+    exec bash "${ROOT}/deploy/update-vhost.sh"
+fi
+
 a2enmod -q deflate headers rewrite ssl auth_basic authn_file authz_user || true
 install -m 644 "$SRC" "/etc/apache2/sites-available/${HOST}.conf"
 a2ensite -q "${HOST}.conf"
