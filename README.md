@@ -161,7 +161,8 @@ help.html         使い方・解説ページ
 favicon.svg       ファビコン
 apple-touch-icon.png / ogp.png   アイコン・OGP画像
 robots.txt / sitemap.xml         クローラー向け
-deploy/           Apache vhost 定義、デプロイ用スクリプト、アクセスログ集計
+deploy/           Apache vhost 定義、デプロイ用スクリプト、アクセスログ集計・パスワード設定
+stats/            アクセス統計の閲覧ページ（ログイン必須。data-*.json はサーバーで生成）
 js/abif.js        ABIF(.ab1/.abi)パーサ、逆相補変換
 js/target.js      角括弧記法のパース
 js/align.js       順方向／逆相補方向の照合と方向判定
@@ -256,6 +257,24 @@ ssh salty 'python3 /var/www/ab1-snp.app.saltybullet.com/deploy/stats.py --json' 
 日別PV／UU、ページ別、流入元（検索エンジン別・検索キーワード）、ブラウザ・OS、
 検索ボットの巡回状況、エラー応答、そして上記の利用イベント集計を出します。
 Python標準ライブラリだけで動き、サーバーへの追加インストールは不要です。
+
+### 閲覧ページ（ログイン必須）
+
+**https://ab1-snp.app.saltybullet.com/stats/** で同じ集計をブラウザで見られます（7日／30日／90日の切替、
+日別グラフ、各集計の一覧）。`stats/index.html` + `stats/stats.js` の静的ページで、外部ライブラリは使っていません。
+
+- **ログイン**: Apache の Basic 認証（HTTPS）。`<Location /stats>` で `/stats/` 以下全体を保護しています。
+  認証ファイルは公開ディレクトリの外 `/var/www/ab1-snp-stats/htpasswd`（bcrypt）。
+  ```
+  ssh salty 'bash /var/www/ab1-snp.app.saltybullet.com/deploy/set-password.sh <ユーザー名>'   # 追加・パスワード変更
+  ```
+- **データ更新**: `deploy/refresh-stats.sh` が `stats/data-{7,30,90}.json` を書き出します。
+  `--install` で saltybullet の crontab に10分おきの実行を登録します（sudo 不要）。
+  ```
+  ssh salty 'bash /var/www/ab1-snp.app.saltybullet.com/deploy/refresh-stats.sh --install'
+  ```
+  この JSON はサーバー側で生成するため `.gitignore` と `deploy.sh` の除外対象です。
+- `robots.txt` で `/stats/` を Disallow、応答に `X-Robots-Tag: noindex` を付けています。
 
 アクセスログは `root:adm 0640` のため、`deploy/setup-vhost.sh` が `saltybullet` を `adm` グループに追加します
 （これにより `sudo` なしで集計できます）。

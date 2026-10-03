@@ -8,6 +8,7 @@ Apache の combined ログだけを読む。外部サービスもデータベー
     ssh salty 'python3 /var/www/ab1-snp.app.saltybullet.com/deploy/stats.py'
     ssh salty 'python3 /var/www/ab1-snp.app.saltybullet.com/deploy/stats.py --days 7'
     ssh salty 'python3 /var/www/ab1-snp.app.saltybullet.com/deploy/stats.py --json'
+    python3 deploy/stats.py --days 30 --json --out stats/data-30.json   # 閲覧ページ用（refresh-stats.sh が呼ぶ）
 
 ログが読めない場合は adm グループに入っていない。deploy/setup-vhost.sh を実行すると追加される。
 """
@@ -306,8 +307,10 @@ def report(st, days):
     print()
 
 
-def to_json(st):
+def to_json(st, days, out_path=None):
     out = {
+        'generated_at': datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds'),
+        'days': days,
         'total_requests': st['total'],
         'range': [st['first'].isoformat() if st['first'] else None,
                   st['last'].isoformat() if st['last'] else None],
@@ -318,10 +321,13 @@ def to_json(st):
         'pages': dict(st['pages']),
         'referrer': dict(st['referrer']),
         'search': dict(st['search']),
+        'search_q': dict(st['search_q']),
         'browser': dict(st['browser']),
         'os': dict(st['os']),
         'bots': dict(st['bots']),
+        'bot_pages': dict(st['bot_pages']),
         'events': dict(st['events']),
+        'events_by_day': {d: dict(st['ev_day'][d]) for d in sorted(st['ev_day'])},
         'files_loaded': st['files_loaded'],
         'files_failed': st['files_ng'],
         'analyze_samples': st['analyze_samples'],
@@ -332,17 +338,26 @@ def to_json(st):
         'min_identity': dict(st['idn']),
         'errors': {'%d %s' % k: v for k, v in st['errors'].items()},
     }
-    print(json.dumps(out, ensure_ascii=False, indent=2))
+    text = json.dumps(out, ensure_ascii=False, indent=2)
+    if out_path:
+        # 閲覧ページが読んでいる途中に中途半端な内容を見せないよう、別名で書いてから置き換える
+        tmp = out_path + '.tmp'
+        with io.open(tmp, 'w', encoding='utf-8') as fh:
+            fh.write(text)
+        os.replace(tmp, out_path)
+    else:
+        print(text)
 
 
 def main():
     ap = argparse.ArgumentParser(description='AB1 Genotype Viewer のアクセス統計')
     ap.add_argument('--days', type=int, default=30, help='集計する日数（既定30）')
     ap.add_argument('--json', action='store_true', help='JSONで出力する')
+    ap.add_argument('--out', help='JSONの書き出し先（--json と併用）')
     a = ap.parse_args()
     st = collect(a.days)
-    if a.json:
-        to_json(st)
+    if a.json or a.out:
+        to_json(st, a.days, a.out)
     else:
         report(st, a.days)
 

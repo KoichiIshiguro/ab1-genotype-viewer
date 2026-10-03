@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>アクセス統計｜AB1 Genotype Viewer</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<style>
+:root{
+  color-scheme:light;
+  --surface:#fcfcfb; --panel:#ffffff; --line:#e6e5e1; --grid:#ecebe7;
+  --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#8a8984;
+  --brand:#5755d9;
+  --series-1:#2a78d6;  /* PV */
+  --series-2:#eb6834;  /* UU */
+  --status-bad:#c0392b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface);color:var(--ink);
+  font:14px/1.6 -apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Noto Sans JP",sans-serif}
+header{display:flex;align-items:center;gap:14px;padding:12px 24px;background:#fff;border-bottom:1px solid var(--line)}
+header .title{font-weight:700;font-size:16px}
+header .title small{font-weight:600;color:var(--ink-3);margin-left:8px;font-size:12px}
+header .back{margin-left:auto;font-size:13px;color:var(--brand);text-decoration:none}
+main{max-width:1180px;margin:0 auto;padding:20px 24px 60px}
+
+.filters{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.filters .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.filters .seg button{border:0;background:transparent;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink-2)}
+.filters .seg button[aria-pressed="true"]{background:var(--brand);color:#fff}
+.filters .meta{color:var(--ink-3);font-size:12px;margin-left:auto}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tile .label{font-size:12px;color:var(--ink-2)}
+.tile .value{font-size:28px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;line-height:1.2;margin-top:2px}
+.tile .sub{font-size:12px;color:var(--ink-3)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.card.wide{grid-column:1 / -1}
+.card h2{font-size:14px;margin:0 0 10px;font-weight:700}
+.card h2 small{font-weight:400;color:var(--ink-3);margin-left:6px;font-size:12px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--ink-2);margin-bottom:6px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+
+.chart{position:relative;width:100%;height:220px}
+.chart svg{display:block;width:100%;height:100%;overflow:visible}
+.chart .grid-line{stroke:var(--grid);stroke-width:1}
+.chart .axis-text{fill:var(--ink-3);font-size:11px}
+.chart .bar{rx:0}
+.chart .hit{fill:transparent}
+.tip{position:absolute;pointer-events:none;background:#fff;border:1px solid var(--line);border-radius:8px;
+  padding:8px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.08);white-space:nowrap;display:none;z-index:2}
+.tip b{display:block;color:var(--ink-3);font-weight:600;margin-bottom:4px}
+.tip .row{display:flex;align-items:center;gap:6px}
+.tip .row i{display:inline-block;width:10px;height:3px;border-radius:2px}
+.tip .row strong{font-variant-numeric:tabular-nums}
+
+table.list{width:100%;border-collapse:collapse;font-size:13px}
+table.list td{padding:4px 0;vertical-align:middle;border-top:1px solid #f1f0ec}
+table.list tr:first-child td{border-top:0}
+table.list td.k{width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0;padding-right:8px}
+table.list td.v{width:52px;text-align:right;font-variant-numeric:tabular-nums;padding-right:8px}
+table.list td.b{position:relative}
+table.list td.b span{display:block;height:8px;border-radius:4px;background:var(--series-1);min-width:2px}
+table.list td.b span.bad{background:var(--status-bad)}
+table.list td.p{width:50px;text-align:right;color:var(--ink-3);font-variant-numeric:tabular-nums;font-size:12px}
+.empty{color:var(--ink-3);font-size:13px;padding:6px 0}
+.more{color:var(--ink-3);font-size:12px;margin-top:6px}
+
+.notice{background:#fff8ec;border:1px solid #f1dcb0;border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;display:none}
+.notice code{background:#f3f2ee;padding:1px 5px;border-radius:4px}
+h3.sect{font-size:13px;color:var(--ink-2);margin:26px 0 10px;font-weight:600;letter-spacing:.02em}
+</style>
+</head>
+<body>
+<header>
+  <div class="title">AB1 Genotype Viewer<small>アクセス統計</small></div>
+  <a class="back" href="../">← ツールへ戻る</a>
+</header>
+<main>
+  <div class="filters">
+    <div class="seg" role="group" aria-label="集計期間">
+      <button type="button" data-days="7" aria-pressed="false">7日</button>
+      <button type="button" data-days="30" aria-pressed="true">30日</button>
+      <button type="button" data-days="90" aria-pressed="false">90日</button>
+    </div>
+    <div class="meta" id="meta"></div>
+  </div>
+
+  <div class="notice" id="notice"></div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="grid">
+    <div class="card wide">
+      <h2>日別の閲覧<small>ボット・画像・スクリプトを除く</small></h2>
+      <div class="legend"><span><i style="background:var(--series-1)"></i>ページビュー</span><span><i style="background:var(--series-2)"></i>訪問元IP数</span></div>
+      <div class="chart" id="dailyChart"><div class="tip" id="dailyTip"></div></div>
+    </div>
+  </div>
+
+  <h3 class="sect">流入</h3>
+  <div class="grid">
+    <div class="card"><h2>ページ別</h2><div id="pages"></div></div>
+    <div class="card"><h2>流入元</h2><div id="referrer"></div></div>
+    <div class="card"><h2>検索キーワード<small>取得できた分のみ</small></h2><div id="search_q"></div></div>
+    <div class="card"><h2>ブラウザ</h2><div id="browser"></div></div>
+    <div class="card"><h2>OS</h2><div id="os"></div></div>
+  </div>
+
+  <h3 class="sect">使用状況</h3>
+  <div class="grid">
+    <div class="card wide">
+      <h2>日別の操作回数<small>ファイル読み込み・解析・Excel出力</small></h2>
+      <div class="legend" id="evLegend"></div>
+      <div class="chart" id="evChart"><div class="tip" id="evTip"></div></div>
+    </div>
+    <div class="card"><h2>イベント別回数</h2><div id="events"></div></div>
+    <div class="card"><h2>解析モード</h2><div id="mode"></div></div>
+    <div class="card"><h2>最小コール比率の設定値</h2><div id="min_call_ratio"></div></div>
+    <div class="card"><h2>最小蛍光強度の設定値</h2><div id="min_intensity"></div></div>
+    <div class="card"><h2>最小一致率の設定値</h2><div id="min_identity"></div></div>
+  </div>
+
+  <h3 class="sect">検索エンジンの巡回とエラー</h3>
+  <div class="grid">
+    <div class="card"><h2>ボット別アクセス</h2><div id="bots"></div></div>
+    <div class="card"><h2>ボットが見たページ</h2><div id="bot_pages"></div></div>
+    <div class="card"><h2>エラー応答<small>ステータス・パス</small></h2><div id="errors"></div></div>
+  </div>
+</main>
+<script src="stats.js"></script>
+</body>
+</html>

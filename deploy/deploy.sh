@@ -14,6 +14,7 @@ rsync -az --delete \
   --exclude '.git' --exclude '.gitignore' --exclude '.upload-files' --exclude 'test' \
   --exclude 'README.md' --exclude 'package.json' \
   --exclude '*.ab1' --exclude '*.abi' --exclude '*.xlsx' \
+  --exclude 'stats/data-*.json' \
   "${HERE}/" "${SSH}:${ROOT}/"
 
 echo "同期しました: ${SSH}:${ROOT}"

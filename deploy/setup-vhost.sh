@@ -11,7 +11,7 @@ SRC="${ROOT}/deploy/${HOST}.conf"
 [ "$(id -u)" -eq 0 ] || { echo "root で実行してください（sudo bash $0）"; exit 1; }
 [ -f "$SRC" ] || { echo "vhost定義が見つかりません: $SRC"; exit 1; }
 
-a2enmod -q deflate headers rewrite ssl || true
+a2enmod -q deflate headers rewrite ssl auth_basic authn_file authz_user || true
 install -m 644 "$SRC" "/etc/apache2/sites-available/${HOST}.conf"
 a2ensite -q "${HOST}.conf"
 apache2ctl configtest
@@ -32,3 +32,4 @@ fi
 
 echo "完了: https://${HOST}/"
 echo "統計の確認: ssh salty 'python3 ${ROOT}/deploy/stats.py'"
+echo "統計ページ : https://${HOST}/stats/  （ログイン情報: deploy/set-password.sh、JSON更新: deploy/refresh-stats.sh --install）"
