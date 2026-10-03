@@ -12,7 +12,8 @@ SELF="${ROOT}/deploy/refresh-stats.sh"
 
 if [ "${1:-}" = "--install" ]; then
     LINE="*/10 * * * * /bin/bash ${SELF} >/dev/null 2>&1"
-    ( crontab -l 2>/dev/null | grep -vF "${SELF}" ; echo "${LINE}" ) | crontab -
+    # crontab が未登録のときは crontab -l が失敗するので、set -e で止まらないよう || true を付ける
+    { { crontab -l 2>/dev/null || true; } | { grep -vF "${SELF}" || true; }; echo "${LINE}"; } | crontab -
     echo "cron に登録しました:"
     crontab -l | grep -F "${SELF}"
     exit 0
