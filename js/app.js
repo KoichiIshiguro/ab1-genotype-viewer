@@ -3,7 +3,10 @@
  *
  * レイアウト:
  *   左3列（サンプル・判定・読取方向）は固定、配列部分だけを横スクロールする。
- *   全サンプルは「ターゲット座標」という共通の軸に載せるので、縦に見れば同じ位置が揃う。
+ *   全サンプルを「対象位置からの相対位置」という共通の軸に載せる。
+ *   各サンプルの対象位置（anchor）を列0に置くので、縦に見れば対象位置が1列に揃う。
+ *   塩基番号はサンプルごとに自分のリード内の番号を表示する。
+ *   ターゲットは FASTA で複数入れられ、サンプルごとにプルダウンで選ぶ（既定は先頭）。
  *   波形はスクロール領域に重ねた1枚のcanvasに、表示範囲だけ描く。
  */
 (function () {
@@ -18,14 +21,16 @@
   }
 
   var COLW = 33;        // 1塩基あたりの幅(px) — CSS の --colw と一致させる
-  var TRACE_TOP = 38;   // 行内の波形描画開始位置
+  var TRACE_TOP = 48;   // 行内の波形描画開始位置（塩基26px＋塩基番号の行の下）
   var TRACE_H = 50;
 
   var CHANNEL_COLORS = { A: '#33a36b', T: '#d84c55', G: '#343944', C: '#3578dc' };
 
   var samples = [];     // { fileName, read } または { fileName, error }
   var results = [];
-  var target = null;
+  var targets = [];     // 入力欄から読んだターゲット（FASTAなら複数）
+  var assign = {};      // fileName → targets のインデックス。未設定は 0（先頭）
+  var centerPending = false;   // 解析し直した直後に対象位置を画面中央へスクロールする
   var axis = { gMin: 0, gMax: 0, cols: 0 };
   var selected = { sample: -1, coord: null };
   var rafPending = false;
@@ -123,24 +128,26 @@
     var warnings = (extraWarnings || []).slice();
 
     try {
-      target = AB1.target.parseAll($('target').value, $('targetName').value.trim() || 'Target-1')[0] || null;
+      targets = AB1.target.parseAll($('target').value, $('targetName').value.trim() || 'Target-1');
     } catch (e) {
-      target = null;
+      targets = [];
       warnings.push({ type: 'err', msg: 'ターゲット配列：' + e.message });
     }
 
     var cfg = settings();
-    results = samples.map(function (s) { return AB1.call.analyze(s, target, cfg); });
+    results = samples.map(function (s) { return AB1.call.analyze(s, targetFor(s.fileName), cfg); });
 
+    // 列の座標 = サンプル内インデックス − anchor。対象位置が列0。
     var shown = results.filter(function (r) { return r.displayable; });
     if (shown.length) {
-      axis.gMin = Math.min.apply(null, shown.map(function (r) { return -r.offset; }));
-      axis.gMax = Math.max.apply(null, shown.map(function (r) { return r.oriented.seq.length - 1 - r.offset; }));
+      axis.gMin = Math.min.apply(null, shown.map(function (r) { return -r.anchor; }));
+      axis.gMax = Math.max.apply(null, shown.map(function (r) { return r.oriented.seq.length - 1 - r.anchor; }));
     } else {
       axis.gMin = 0;
-      axis.gMax = target ? target.length - 1 : 0;
+      axis.gMax = targets.length ? targets[0].length - 1 : 0;
     }
     axis.cols = axis.gMax - axis.gMin + 1;
+    centerPending = targets.length > 0;
 
     if (selected.sample >= results.length) selected = { sample: -1, coord: null };
     if (selected.sample < 0 && results.length) {
@@ -150,7 +157,8 @@
 
     // サンプルが無い状態の自動実行（ページ初期化・設定変更）は数えない
     if (results.length) stat('analyze', {
-      m: target ? 'target' : 'scan',           // ターゲット指定あり／全塩基スキャン
+      m: targets.length ? 'target' : 'scan',   // ターゲット指定あり／全塩基スキャン
+      t: targets.length,                       // FASTAで入れたターゲット数
       n: results.length,
       ok: shown.length,
       w: warnings.length,
@@ -163,12 +171,19 @@
     render();
   }
 
+  /* サンプルに割り当てたターゲット。未設定・範囲外は先頭（既定）。ターゲットが無ければ null */
+  function targetFor(fileName) {
+    if (!targets.length) return null;
+    var i = assign[fileName];
+    return targets[(i != null && i >= 0 && i < targets.length) ? i : 0];
+  }
+
   /* ---------------- 描画 ---------------- */
 
   function defaultCoord(r) {
     if (!r || !r.displayable) return null;
     if (r.mode === 'scan') return r.hetSites && r.hetSites.length ? r.hetSites[0].index : null;
-    return target ? target.variantIndex : null;
+    return 0;   // 対象位置は常に列0
   }
 
   function badgeText(r) {
@@ -194,17 +209,23 @@
   function render() {
     $('count').textContent = results.length
       ? results.length + ' samples · ' +
-        (target ? 'ターゲット方向に統一表示' : 'ターゲット未指定（各ファイルをそのまま表示）')
+        (targets.length
+          ? (targets.length > 1 ? 'ターゲット ' + targets.length + ' 件 · ' : '') + '対象位置を中央に揃えて表示'
+          : 'ターゲット未指定（各ファイルをそのまま表示）')
       : '0 samples';
     $('empty').style.display = results.length ? 'none' : 'block';
     $('board').style.display = results.length ? 'flex' : 'none';
-    $('footnote').textContent = target
-      ? '対象位置: ターゲット配列の ' + (target.variantIndex + 1) + ' 塩基目 [' +
-        target.alleles.join('/') + ']　·　塩基をクリックまたはポイントすると詳細値を表示します'
+    $('footnote').textContent = targets.length
+      ? (targets.length > 1
+          ? '各サンプルのプルダウンでターゲットを選べます（既定は先頭の ' + targets[0].name + '）'
+          : '対象位置: ' + targets[0].name + ' の ' + (targets[0].variantIndex + 1) + ' 塩基目 [' +
+            targets[0].alleles.join('/') + ']') +
+        '　·　塩基番号は各サンプル内の番号　·　塩基をクリックまたはポイントすると詳細値を表示します'
       : 'ターゲット未指定：各ファイルの全塩基でホモ／ヘテロを判定しています　·　塩基をクリックまたはポイントすると詳細値を表示します';
 
     renderFixedColumn();
     renderTracks();
+    if (centerPending) { centerPending = false; scrollToCoord(0); }
     drawTraces();
     renderDetails();
   }
@@ -228,6 +249,27 @@
       row.querySelector('.sample strong').textContent = r.label;
       row.querySelector('.sample small').textContent =
         r.sampleName ? 'AB1サンプル名: ' + r.sampleName : r.fileName;
+      if (targets.length > 1 && !r.error) {
+        // ターゲットが複数あるときだけ、サンプルごとの選択肢を出す
+        var sel = document.createElement('select');
+        sel.className = 'tsel';
+        sel.title = 'このサンプルに使うターゲット';
+        targets.forEach(function (t, ti) {
+          var o = document.createElement('option');
+          o.value = String(ti);
+          o.textContent = t.name;
+          sel.appendChild(o);
+        });
+        sel.value = String(targets.indexOf(r.target) >= 0 ? targets.indexOf(r.target) : 0);
+        sel.onclick = function (ev) { ev.stopPropagation(); };
+        sel.onchange = function (ev) {
+          ev.stopPropagation();
+          assign[r.fileName] = Number(sel.value);
+          stat('retarget', { t: targets.length });
+          analyze([]);
+        };
+        row.querySelector('.sample').appendChild(sel);
+      }
       row.querySelector('.badge').textContent = badgeText(r);
       row.querySelector('.call small').textContent = badgeSub(r);
       row.querySelector('.direction span').textContent = r.direction;
@@ -246,13 +288,14 @@
 
     ruler.innerHTML = '';
     ruler.style.width = width + 'px';
+    var hasTarget = targets.length > 0;
     for (var c = axis.gMin; c <= axis.gMax; c++) {
-      var isVariant = target && (c === target.variantIndex);
+      var isVariant = hasTarget && c === 0;
       var label = null;
       if (isVariant) {
-        label = '▼ 対象位置 ' + (c + 1);
-      } else if (target) {
-        if (c >= 0 && c < target.length && (c + 1) % 10 === 0) label = String(c + 1);
+        label = '▼ 対象位置';
+      } else if (hasTarget) {
+        if (c % 10 === 0) label = (c > 0 ? '+' : '') + c;   // 対象位置からの相対位置
       } else if (c >= 0 && (c + 1) % 10 === 0) {
         label = String(c + 1);   // ターゲット未指定時はサンプル内の塩基番号
       }
@@ -279,24 +322,36 @@
       } else {
         var bases = document.createElement('div');
         bases.className = 'bases';
-        var startCoord = -r.offset;
-        var html = '<span style="display:inline-block;width:' +
-                   ((startCoord - axis.gMin) * COLW) + 'px"></span>';
+        var startCoord = -r.anchor;
+        var pad = '<span style="display:inline-block;width:' + ((startCoord - axis.gMin) * COLW) + 'px"></span>';
+        var html = pad, posHtml = pad;
         var seq = r.oriented.seq;
+        var t = r.target;
+        var tFrom = t ? -t.variantIndex : null, tTo = t ? t.length - 1 - t.variantIndex : null;
         var hetAt = {};
         (r.hetSites || []).forEach(function (h) { hetAt[h.index] = true; });
         for (var s = 0; s < seq.length; s++) {
-          var coord = s - r.offset;
+          var coord = s - r.anchor;
           var cls = 'base';
-          if (target && coord >= 0 && coord < target.length) cls += ' in-target';
-          if (target && coord === target.variantIndex) cls += ' target-base';
+          if (t && coord >= tFrom && coord <= tTo) cls += ' in-target';
+          if (t && coord === 0) cls += ' target-base';
           if (hetAt[s]) cls += ' het-base';
           var ch = seq.charAt(s);
           html += '<span class="' + cls + '" data-s="' + s + '" data-coord="' + coord +
                   '" style="color:' + (CHANNEL_COLORS[ch] || '#8b93a4') + '">' + ch + '</span>';
+          // サンプルごとの塩基番号（10塩基ごと＋対象位置）
+          var isAnchor = t && coord === 0;
+          posHtml += '<span class="pos' + (isAnchor ? ' anchor' : '') + '">' +
+                     ((s + 1) % 10 === 0 || isAnchor ? (s + 1) : '') + '</span>';
         }
         bases.innerHTML = html;
         track.appendChild(bases);
+        if (t) {
+          var posLine = document.createElement('div');
+          posLine.className = 'posline';
+          posLine.innerHTML = posHtml;
+          track.appendChild(posLine);
+        }
       }
 
       track.onclick = function (ev) {
@@ -354,11 +409,11 @@
     // 画面に入っているサンプル内インデックスの範囲
     var firstCoord = Math.floor(scrollLeft / COLW) + axis.gMin - 1;
     var lastCoord = firstCoord + Math.ceil(viewW / COLW) + 2;
-    var sFrom = Math.max(0, firstCoord + r.offset);
-    var sTo = Math.min(S - 1, lastCoord + r.offset);
+    var sFrom = Math.max(0, firstCoord + r.anchor);
+    var sTo = Math.min(S - 1, lastCoord + r.anchor);
     if (sTo <= sFrom) return;
 
-    var xOf = function (s) { return (s - r.offset - axis.gMin) * COLW + COLW / 2 - scrollLeft; };
+    var xOf = function (s) { return (s - r.anchor - axis.gMin) * COLW + COLW / 2 - scrollLeft; };
     var scale = r.scaleRef || 1000;
 
     ['A', 'T', 'G', 'C'].forEach(function (base) {
@@ -411,7 +466,7 @@
 
     var site = null, positionLabel = '';
     if (r.displayable && selected.coord != null) {
-      site = AB1.call.measure(r.oriented, selected.coord + r.offset);
+      site = AB1.call.measure(r.oriented, selected.coord + r.anchor);
     } else if (r.mode !== 'scan') {
       site = r.site;
     }
@@ -419,10 +474,10 @@
       if (r.mode === 'scan') {
         positionLabel = (site.index + 1) + ' 塩基目' +
           (isHetSite(r, site.index) ? '（ヘテロと判定した位置）' : '');
-      } else if (target && selected.coord === target.variantIndex) {
-        positionLabel = 'ターゲット ' + (target.variantIndex + 1) + ' 塩基目（対象位置）';
+      } else if (selected.coord === 0) {
+        positionLabel = '対象位置（' + r.targetName + ' の ' + (r.target.variantIndex + 1) + ' 塩基目）';
       } else {
-        positionLabel = 'ターゲット座標 ' + (selected.coord + 1) + ' 塩基目';
+        positionLabel = '対象位置から ' + (selected.coord > 0 ? '+' : '') + selected.coord + ' 塩基';
       }
     }
 
@@ -438,6 +493,7 @@
       kv.innerHTML =
         row('サンプル名', r.sampleName || r.label) +
         row('元ファイル名', r.fileName) +
+        (r.mode === 'scan' ? '' : row('ターゲット', r.targetName)) +
         row('表示位置', positionLabel) +
         row('サンプル内位置', (site.index + 1) + ' / ' + r.oriented.seq.length + ' 塩基目') +
         row('ベースコール', site.base) +
@@ -505,9 +561,9 @@
       var b = document.createElement('button');
       b.textContent = (h.index + 1) + '　' + h.genotype;
       b.onclick = function () {
-        selected = { sample: selected.sample, coord: h.index - r.offset };
+        selected = { sample: selected.sample, coord: h.index - r.anchor };
         render();
-        scrollToCoord(h.index - r.offset);
+        scrollToCoord(h.index - r.anchor);
       };
       hetlist.appendChild(b);
     });
@@ -549,7 +605,9 @@
       r.label,
       r.mode === 'scan'
         ? 'サンプル内 ' + (site.index + 1) + ' 塩基目' + (isHetSite(r, site.index) ? '（ヘテロ）' : '')
-        : 'ターゲット座標 ' + (Number(el.dataset.coord) + 1) + ' / サンプル内 ' + (site.index + 1) + ' 塩基目',
+        : (Number(el.dataset.coord) === 0 ? '対象位置'
+            : '対象位置から ' + (Number(el.dataset.coord) > 0 ? '+' : '') + el.dataset.coord) +
+          ' / サンプル内 ' + (site.index + 1) + ' 塩基目（' + r.targetName + '）',
       'ベースコール ' + site.base + '　Quality ' + (site.quality != null ? site.quality : '—'),
       '合計強度 ' + site.total
     ].concat(AB1.call.BASES.map(function (b) {

@@ -53,6 +53,19 @@ throws('前後が短すぎるとエラー', () => targetLib.parseOne('ATCG[A/G]A
 throws('候補が3種類はエラー', () => targetLib.parseOne('ATCGCCATG[A/G/C]ATTCCTGA'), /2種類まで/);
 throws('ACGT以外はエラー', () => targetLib.parseOne('ATCGCCXTG[A/G]ATTCCTGA'), /A\/C\/G\/T/);
 
+console.log('\n--- 複数ターゲット（FASTA） ---');
+const fa = targetLib.parseAll('>ACTN3_R577X\nGGTGAACTGCTGGAGCC[C/T]\nGAGTGCTCAGGCC\n\n>PPARGC1A_G482S\nCTGTGGACACCTC[G/A]TCTCCACAGCTC\n');
+check('FASTAの2レコードを名前つきで読む', fa.map(t => t.name), ['ACTN3_R577X', 'PPARGC1A_G482S']);
+check('折り返した配列行を連結する', fa[0].seq, 'GGTGAACTGCTGGAGCCNGAGTGCTCAGGCC');
+check('各レコードの対象位置', fa.map(t => t.variantIndex), [17, 13]);
+check('名前のないレコードには連番', targetLib.parseAll('>\nATCGCCATG[A/G]ATTCCTGA\n>Second\nATCGCCATG[C/T]ATTCCTGA').map(t => t.name),
+  ['Target-1', 'Second']);
+check('> が無ければ従来どおり1行＝1ターゲット', targetLib.parseAll('ATCGCCATG[A/G]ATTCCTGA\nATCGCCATG[C/T]ATTCCTGA').map(t => t.name),
+  ['Target-1', 'Target-2']);
+check('空入力は空配列', targetLib.parseAll('  \n '), []);
+throws('エラーにはどのレコードかを付ける', () => targetLib.parseAll('>A\nGGTGAACTGCTGGAGCCCTGAGTGCTCAGGCC\n>B\nCTGTGGACACCTC[G/A]TCTCCACAGCTC'), /^A：角括弧/);
+throws('名前の重複はエラー', () => targetLib.parseAll('>X\nATCGCCATG[A/G]ATTCCTGA\n>X\nATCGCCATG[C/T]ATTCCTGA'), /重複/);
+
 console.log('\n--- AB1読込失敗の扱い ---');
 throws('ABIF署名なし', () => AB1.abif.parse(new Uint8Array(64).buffer), /ABIF署名/);
 

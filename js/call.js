@@ -95,6 +95,7 @@
       sampleName: (sample.read && sample.read.sampleName) || '',
       label: sample.fileName.replace(/\.(ab1|abi)$/i, ''),
       targetName: target ? target.name : '',
+      target: target || null,       // このサンプルに使ったターゲット（サンプルごとに違ってよい）
       mode: target ? 'target' : 'scan',
       displayable: false,
       status: null,
@@ -108,6 +109,7 @@
       alignment: null,
       oriented: null,
       offset: null,
+      anchor: null,                 // 表示で列0（画面中央）に置くサンプル内インデックス。対象位置＝0 になる
       site: null,
       scaleRef: 1000,
       settings: cfg
@@ -158,6 +160,7 @@
     result.offset = al.offset;
 
     var index = al.offset + target.variantIndex;
+    result.anchor = index;          // 対象位置を全サンプルで同じ列に揃える
     if (index < 0 || index >= oriented.seq.length) {
       result.status = 'not_reached';
       result.zygosity = '判読不能';
@@ -217,6 +220,7 @@
     result.displayable = true;
     result.oriented = read;              // 揃える相手がないのでそのまま表示する
     result.offset = 0;
+    result.anchor = 0;                   // 揃える位置がないので先頭を列0に置く
     result.scaleRef = abif.scaleReference(read);
     result.direction = '—';
     result.directionNote = 'ターゲット未指定';

@@ -1,6 +1,6 @@
 {
   "name": "ab1-genotype-viewer",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "description": "AB1/ABIファイルのSangerシーケンスからターゲット位置の遺伝型を判定するローカルWebアプリ",
   "private": true,
   "scripts": {

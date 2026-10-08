@@ -4,8 +4,12 @@
  *   ATCGCCATG[A/G]ATTCCT   候補2種
  *   ATCGCCATG[G]ATTCCT     候補1種
  *
- * MVPは1ターゲットだが、将来の複数ターゲット・19座位一括登録（要件4）に備えて
- * parseAll() は常に配列を返す。
+ * 複数ターゲットは FASTA 形式で入れる（>名前 の行に続けて配列。配列は複数行に折り返してよい）。
+ *   >ACTN3_R577X
+ *   GGTGAACTGCTGGAGCC[C/T]GAGTGCTCAGGCC
+ *   >PPARGC1A_G482S
+ *   CTGTGGACACCTC[G/A]TCTCCACAGCTC
+ * 「>」が無いときは従来どおり1行＝1ターゲット。parseAll() は常に配列を返す。
  */
 (function (root) {
   'use strict';
@@ -60,16 +64,50 @@
     };
   }
 
-  // 1行＝1ターゲット（将来の19座位一括登録用）。空行は無視。
+  // FASTA（>名前 ＋ 配列行）を {name, seq} の配列にする。名前の無いレコードには連番を振る。
+  function splitFasta(lines, baseName) {
+    var records = [], cur = null;
+    lines.forEach(function (line) {
+      if (line.charAt(0) === '>') {
+        cur = { name: line.slice(1).trim(), seq: '' };
+        records.push(cur);
+      } else {
+        if (!cur) { cur = { name: '', seq: '' }; records.push(cur); }   // 先頭に > が無い行
+        cur.seq += line;
+      }
+    });
+    records.forEach(function (r, i) {
+      if (!r.name) r.name = (baseName || 'Target') + '-' + (i + 1);
+    });
+    return records;
+  }
+
   // 入力が空のときは空配列を返す（= ターゲット未指定。エラーではない）。
+  // 「>」で始まる行があれば FASTA として読み、無ければ1行＝1ターゲット。
+  // エラーはどのターゲットで起きたか分かるように名前を付けて投げ直す。
   function parseAll(rawText, baseName) {
     var lines = String(rawText || '').split(/[\r\n]+/)
       .map(function (s) { return s.trim(); })
       .filter(function (s) { return s.length > 0; });
     if (!lines.length) return [];
-    return lines.map(function (line, i) {
-      return parseOne(line, lines.length === 1 ? (baseName || 'Target-1')
-                                               : (baseName || 'Target') + '-' + (i + 1));
+
+    var isFasta = lines.some(function (l) { return l.charAt(0) === '>'; });
+    var records = isFasta
+      ? splitFasta(lines, baseName)
+      : lines.map(function (line, i) {
+          return { name: lines.length === 1 ? (baseName || 'Target-1') : (baseName || 'Target') + '-' + (i + 1),
+                   seq: line };
+        });
+
+    var seen = {};
+    return records.map(function (rec) {
+      if (seen[rec.name]) throw new Error('ターゲット名が重複しています: ' + rec.name);
+      seen[rec.name] = true;
+      try {
+        return parseOne(rec.seq, rec.name);
+      } catch (e) {
+        throw new Error((records.length > 1 ? rec.name + '：' : '') + e.message);
+      }
     });
   }
 

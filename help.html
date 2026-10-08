@@ -78,7 +78,7 @@ footer{max-width:1180px;margin:auto;padding:0 28px 50px;color:var(--muted);font-
 <header class="top">
   <div class="mark">A</div>
   <div>
-    <div class="title">AB1 Genotype Viewer<span class="ver">v0.7.2</span></div>
+    <div class="title">AB1 Genotype Viewer<span class="ver">v0.8.0</span></div>
     <div class="sub">使い方・解説</div>
   </div>
   <div class="spacer"></div>
@@ -188,6 +188,22 @@ footer{max-width:1180px;margin:auto;padding:0 28px 50px;color:var(--muted);font-
   <li><strong>Forward鎖・Reverse鎖のどちらで書いても構いません。</strong>サンプルの向きは自動で判定されます。</li>
 </ul>
 
+<h3>4.3 複数のターゲット（FASTA形式）</h3>
+
+<p>座位の違うサンプルを一度に読み込むときは、ターゲットを <strong>FASTA 形式</strong>で複数入れます。<code>&gt;</code> で始まる行が名前、続く行が配列です（配列は何行に折り返しても構いません）。</p>
+
+<div class="seqbox">&gt;ACTN3_R577X
+GGTGAACTGCTGGAGCC<span class="v">[C/T]</span>GAGTGCTCAGGCC
+&gt;PPARGC1A_G482S
+CTGTGGACACCTC<span class="v">[G/A]</span>TCTCCACAGCTC</div>
+
+<ul>
+  <li>ターゲットが2件以上あると、画面左のサンプル名の下に<strong>プルダウン</strong>が出ます。サンプルごとに使うターゲットを選ぶと、そのターゲットで照合・判定し直します。</li>
+  <li><strong>既定は先頭のターゲット</strong>です。選び直していないサンプルはすべて先頭のターゲットで判定されます。</li>
+  <li>Excel出力の「ターゲット名」列には、サンプルごとに選んだターゲットの名前が入ります。</li>
+  <li><code>&gt;</code> の無い複数行は、従来どおり1行＝1ターゲット（名前は Target-1, Target-2, …）として扱います。</li>
+</ul>
+
 <div class="note">
   <b>空欄にした場合</b>
   照合も向き判定も行わず、各ファイルを読まれたままの向きで表示して、<strong>全塩基位置についてホモ／ヘテロを判定</strong>します（<a href="#usecase">ケース3</a>）。
@@ -225,7 +241,7 @@ footer{max-width:1180px;margin:auto;padding:0 28px 50px;color:var(--muted);font-
   <li><strong>サンプル名</strong> ── AB1ファイル内の <code>SMPL</code>（受託会社の管理番号になっていることが多い）とファイル名を併記します。</li>
   <li><strong>判定</strong> ── 遺伝型（<span class="G">G</span>/<span class="G">G</span> など）とホモ／ヘテロ。ターゲット未指定モードではヘテロの検出箇所数を表示します。</li>
   <li><strong>読取方向</strong> ── そのサンプルが Forward と Reverse のどちらで読まれていたか。Reverse の場合、<strong>配列・ピーク位置・4色チャンネルのすべてを逆相補変換して</strong>、ターゲットと同じ向きに揃えて表示しています。元の方向は記録・出力されます。</li>
-  <li><strong>配列と波形</strong> ── 全サンプルを「ターゲット配列上の座標」という共通の軸に載せているため、<strong>縦に見れば同じ位置が揃います。</strong>目的の位置には色が付きます。</li>
+  <li><strong>配列と波形</strong> ── 各サンプルの<strong>対象位置を画面中央の同じ列に揃えて</strong>表示します。ターゲットがサンプルごとに違っていても、縦に見れば対象位置が1列に並びます。上のルーラーは対象位置からの相対位置（−10, +10 …）、各行の塩基の下の小さな数字は<strong>そのサンプル内の塩基番号</strong>です。目的の位置には色が付きます。</li>
   <li><strong>ツールチップ</strong> ── 塩基にポイントすると、その位置の A／T／G／C 比率、各チャンネルの蛍光強度、Quality score が出ます。クリックすると下の詳細欄に固定されます。</li>
 </ul>
 
