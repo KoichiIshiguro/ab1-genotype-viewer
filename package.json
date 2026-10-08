@@ -1,10 +1,10 @@
 {
   "name": "ab1-genotype-viewer",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "AB1/ABIファイルのSangerシーケンスからターゲット位置の遺伝型を判定するローカルWebアプリ",
   "private": true,
   "scripts": {
-    "test": "node test/rules_test.js && node test/stat_test.js && node test/validate.js",
+    "test": "node test/rules_test.js && node test/stat_test.js && node test/version_test.js && node test/validate.js",
     "serve": "python3 -m http.server 8765 --bind 127.0.0.1"
   }
 }
